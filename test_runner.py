@@ -19,14 +19,20 @@ def clone_repo(repo_url, branch):
     return folder
 
 
+def venv_python(venv):
+    # windows keeps the venv's python in Scripts, linux and mac keep it in bin
+    if os.name == "nt":
+        return os.path.join(venv, "Scripts", "python.exe")
+    return os.path.join(venv, "bin", "python")
+
+
 def install_deps(folder):
     venv = os.path.join(folder, ".venv")
 
     # make a venv inside the cloned repo
     subprocess.run([sys.executable, "-m", "venv", venv], check=True)
 
-    # path to that venv's python (Windows)
-    python = os.path.join(venv, "Scripts", "python.exe")
+    python = venv_python(venv)
 
     # install the repo's requirements + pytest
     result = subprocess.run(
