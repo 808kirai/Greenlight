@@ -31,6 +31,13 @@ Fill in LLM_BASE_URL and LLM_API_KEY in .env, then:
 
 On Linux or macOS use source .venv/bin/activate and cp instead of copy.
 
+Tests
+
+They use a small local git repo, so they need no network or keys.
+
+    pip install -r requirements-dev.txt
+    python -m pytest -q
+
 Settings
 
 - `LLM_BASE_URL` - Any OpenAI compatible endpoint
