@@ -26,6 +26,18 @@ def venv_python(venv):
     return os.path.join(venv, "bin", "python")
 
 
+def install_args(folder):
+    # what to give pip so the repo's own dependencies get installed
+    # many projects have no requirements.txt and list them in pyproject.toml or setup.py instead
+    requirements = os.path.join(folder, "requirements.txt")
+    if os.path.exists(requirements):
+        return ["-r", requirements]
+    if os.path.exists(os.path.join(folder, "pyproject.toml")) or os.path.exists(os.path.join(folder, "setup.py")):
+        return [folder]
+    # nothing to install, the tests only need pytest
+    return []
+
+
 def install_deps(folder):
     venv = os.path.join(folder, ".venv")
 
@@ -36,7 +48,7 @@ def install_deps(folder):
 
     # install the repo's requirements + pytest
     result = subprocess.run(
-        [python, "-m", "pip", "install", "-r", os.path.join(folder, "requirements.txt"), "pytest"],
+        [python, "-m", "pip", "install", *install_args(folder), "pytest"],
         capture_output=True,
         text=True,
     )
