@@ -59,9 +59,31 @@ def install_deps(folder):
     return python
 
 
+def run_tests(folder, python, timeout=600):
+    # runs the repo's tests with pytest inside its own venv
+    # returns whether they passed and the output, which is what the agent reads to find the failure
+    try:
+        result = subprocess.run(
+            [python, "-m", "pytest", "-q", "-p", "no:cacheprovider"],
+            cwd=folder,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"tests took longer than {timeout} seconds"
+
+    # exit code 0 means every test passed, 5 means pytest found no tests
+    return result.returncode == 0, result.stdout + result.stderr
+
+
 if __name__ == "__main__":
     path = clone_repo("https://github.com/808kirai/AmaniHaven.git", "main")
     print("Cloned to:", path)
 
     python = install_deps(path)
     print("Deps installed:", python)
+
+    passed, output = run_tests(path, python)
+    print("Tests passed" if passed else "Tests failed")
+    print(output[-2000:])
