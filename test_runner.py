@@ -1,4 +1,6 @@
 import os
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -14,9 +16,21 @@ def clone_repo(repo_url, branch):
     )
 
     if result.returncode != 0:
+        # don't leave an empty temp folder behind when the clone fails
+        cleanup(folder)
         raise RuntimeError(result.stderr)
 
     return folder
+
+
+def cleanup(folder):
+    # deletes a cloned repo and its venv
+    # git marks its object files read only on windows, so clear that flag and try again
+    def make_writable(func, path, _):
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
+    shutil.rmtree(folder, onexc=make_writable)
 
 
 def venv_python(venv):
@@ -81,9 +95,13 @@ if __name__ == "__main__":
     path = clone_repo("https://github.com/808kirai/AmaniHaven.git", "main")
     print("Cloned to:", path)
 
-    python = install_deps(path)
-    print("Deps installed:", python)
+    # every run makes a new temp folder, so remove it even when a step fails
+    try:
+        python = install_deps(path)
+        print("Deps installed:", python)
 
-    passed, output = run_tests(path, python)
-    print("Tests passed" if passed else "Tests failed")
-    print(output[-2000:])
+        passed, output = run_tests(path, python)
+        print("Tests passed" if passed else "Tests failed")
+        print(output[-2000:])
+    finally:
+        cleanup(path)
